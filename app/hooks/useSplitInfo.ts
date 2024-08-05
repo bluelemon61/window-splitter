@@ -1,25 +1,30 @@
 import { useState, useEffect } from "react";
+import { Splitter } from "../types/Slplitter";
 
-const KEY = "WINDOW_SPLITTER";
+const useSplitInfo = (key: string) => {
+  const [localStorageData, setLocalStorageData] = useState<Splitter | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+    try {
+      const item = localStorage.getItem(key);
+      return item ? JSON.parse(item) : null;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  });
 
-const useSplitInfo = () => {
-  const [localStorageData, setLocalStorageData] = useState(
-    localStorage.getItem(KEY)
-  );
+  const setSplitInfo = (value: Splitter) => {
+    try {
+      setLocalStorageData(value);
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (error) {
+      console.error(error);
+    }
+  }
 
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setLocalStorageData(localStorage.getItem(KEY));
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
-
-  return [ localStorageData, setLocalStorageData ];
+  return [ localStorageData, setSplitInfo ];
 };
 
 export default useSplitInfo;
