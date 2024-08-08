@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "react";
+import useSelect from "../hooks/useSelect";
+import { BoxWindowObject } from "../types/BoxWindowObject";
+import useSplitInfo from "../hooks/useSplitInfo";
+import { Splitter } from "../types/Slplitter";
+import crypto from "crypto";
 
-export default function BoxWindow({ color = "white", scale = 1 }) {
+export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWindowObject) {
   const wsize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [positioning, setPositioning] = useState("none");
+  const [windowSelect, setWindowSelect] = useSelect("WINDOW-SPLITTER-SELECT");
+  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -33,10 +40,8 @@ export default function BoxWindow({ color = "white", scale = 1 }) {
   useEffect(() => {
     const windowPositioner = () => {
       if (
-        0 < mousePosition.x &&
-        mousePosition.x <= 100 &&
-        0 < mousePosition.y &&
-        mousePosition.y <= 100
+        0 <= mousePosition.x && mousePosition.x <= 100 &&
+        0 <= mousePosition.y && mousePosition.y <= 100
       ) {
         if (mousePosition.y < 20) {
           setPositioning("top");
@@ -58,19 +63,124 @@ export default function BoxWindow({ color = "white", scale = 1 }) {
 
     windowPositioner();
   }, [mousePosition]);
+
+  const newSpliterMaker = (data: BoxWindowObject | Splitter, address: string): BoxWindowObject | Splitter => {
+    if ('childs' in data) {
+      const newWindow: BoxWindowObject = {
+        color: windowSelect ?? undefined,
+        address: crypto.createHash('sha256').update((new Date()).toISOString()+address).digest('base64'),
+      }; 
+      let addIdx = -1;
+
+      const newChilds = data.childs.map((child, index) => {
+        if (child.address === address) {
+          console.log(address);
+          switch(positioning) {
+            case 'left':
+              if (data.isVertical) {
+                return {
+                  isVertical: false,
+                  childs: [newWindow, child],
+                  address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                };
+              } else {
+                addIdx = index;
+                return child;
+              }
+            case 'right':
+              if (data.isVertical) {
+                return {
+                  isVertical: false,
+                  childs: [child, newWindow],
+                  address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                };
+              } else {
+                addIdx = index+1;
+                return child;
+              }
+            case 'top':
+              if (!data.isVertical) {
+                return {
+                  isVertical: true,
+                  childs: [newWindow, child],
+                  address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                };
+              } else {
+                addIdx = index;
+                return child;
+              }
+            case 'bottom':
+              if (!data.isVertical) {
+                return {
+                  isVertical: true,
+                  childs: [child, newWindow],
+                  address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                };
+              } else {
+                addIdx = index+1;
+                return child;
+              }
+            default:
+              return child;
+          }
+        }
+        return newSpliterMaker(child, address)
+      });
+
+      console.log(addIdx, newChilds);
+
+      if (addIdx > -1) {
+        newChilds.splice(addIdx, 0, newWindow);
+      }
+
+      return {
+        ...data,
+        childs: newChilds,
+      }
+    } else {
+      return data
+    }
+  }
+
+  const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    if (windowSelect) {
+      const windowtype = windowSelect;
+      setWindowSelect(null);
+
+      setSplitInfo(newSpliterMaker(splitInfo, address) as Splitter);
+    }
+  }
+
   return (
     <div
-      className="flex flex-col"
+      className="flex flex-col h-full"
       style={{
         width: `${wsize}%`,
       }}
     >
       <div className="bg-black text-white">nav</div>
       <div className={`relative h-full`} ref={boxRef}>
-        <div className="absolute w-full h-full bg-white opacity-0 hover:opacity-50">
-          Positioning: {positioning}, Mouse Position: {mousePosition.x}%,{" "}
-          {mousePosition.y}%
-        </div>
+        {
+          windowSelect
+          ? <div
+              className="absolute w-full h-full bg-white opacity-0 hover:opacity-50"
+              style={
+                positioning !== 'none' 
+                ? {
+                  width: positioning === 'left' || positioning === 'right' ? '50%' : undefined,
+                  height: positioning === 'top' || positioning === 'bottom' ? '50%' : undefined,
+                  right: positioning === 'right' ? 0 : undefined,
+                  bottom: positioning === 'bottom' ? 0 : undefined,
+                }
+                : undefined
+              }
+              onClick={windowAdderListener}
+            >
+              Positioning: {positioning},{" "}
+              Mouse Position: {mousePosition.x}%,{mousePosition.y}%
+            </div>
+          : undefined
+        }
         <div
           className={`flex flex-col justify-center items-center w-full h-full bg-${color}-300`}
         >

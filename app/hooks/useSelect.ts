@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import { Splitter } from "../types/Slplitter";
-import { UseSplitInfo } from "../types/UseSplitInfo";
-import crypto from "crypto";
+import { UseSelect } from "../types/UseSelect";
 
 declare global {
   interface WindowEventMap {
@@ -9,15 +7,10 @@ declare global {
   }
 }
 
-const useSplitInfo = (key: string): UseSplitInfo => {
-  const initSplitter: Splitter = {
-    isVertical: false,
-    childs: [],
-    address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-  };
+const useSelect = (key: string): UseSelect => {
+  const initSelect: string | null = null;
 
-  const [localStorageData, setLocalStorageData] =
-    useState<Splitter>(initSplitter);
+  const [localStorageData, setLocalStorageData] = useState<string | null>(initSelect);
 
   useEffect(() => {
     try {
@@ -25,14 +18,14 @@ const useSplitInfo = (key: string): UseSplitInfo => {
       if (item) {
         setLocalStorageData(JSON.parse(item));
       } else {
-        localStorage.setItem(key, JSON.stringify(initSplitter));
+        localStorage.setItem(key, JSON.stringify(initSelect));
       }
     } catch (error) {
       console.error(error);
     }
   }, [key]);
 
-  const setSplitInfo = (value: Splitter) => {
+  const setSelect = (value: string | null) => {
     try {
       setLocalStorageData(value);
       localStorage.setItem(key, JSON.stringify(value));
@@ -64,7 +57,7 @@ const useSplitInfo = (key: string): UseSplitInfo => {
     if (item) {
       setLocalStorageData(JSON.parse(item));
     } else {
-      localStorage.setItem(key, JSON.stringify(initSplitter));
+      localStorage.setItem(key, JSON.stringify(initSelect));
     }
   };
 
@@ -78,7 +71,7 @@ const useSplitInfo = (key: string): UseSplitInfo => {
     };
   });
 
-  return [localStorageData, setSplitInfo];
+  return [localStorageData, setSelect];
 };
 
-export default useSplitInfo;
+export default useSelect;
