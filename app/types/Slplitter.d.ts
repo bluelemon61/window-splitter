@@ -1,6 +1,6 @@
 import { BoxWindowObject } from "./BoxWindowObject";
 
 export interface Splitter {
-    isVertical: boolean,
-    childs: (BoxWindowObject)[],
+  isVertical: boolean;
+  childs: (BoxWindowObject | Splitter)[];
 }

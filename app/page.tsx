@@ -1,41 +1,48 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from "react";
-import BoxWindow from "./components/BoxWindow";
+import { useState, useEffect, Fragment } from "react";
 import { Splitter } from "./types/Slplitter";
+import { UseSplitInfo } from "./types/UseSplitInfo";
 import { BoxWindowObject } from "./types/BoxWindowObject";
+import useSplitInfo from "./hooks/useSplitInfo";
+import SpliterWindow from "./components/SpliterWindow";
 
 export default function Home() {
-  const boxWindowObject: BoxWindowObject = {
-    boxWindow: BoxWindow,
+  const [splitInfo, setSplitInfo]: UseSplitInfo =
+    useSplitInfo("WINDOW-SPLITER");
+
+  function isSplitter(box: any): box is Splitter {
+    return (box as Splitter).isVertical !== undefined;
   }
 
   const splitter: Splitter = {
     isVertical: true,
-    childs: [boxWindowObject, boxWindowObject],
-  }
+    childs: splitInfo.childs.map((box, index) => {
+      if (isSplitter(box)) {
+        return {
+          isVertical: box.isVertical,
+          childs: box.childs,
+        };
+      } else {
+        return {
+          color: box.color,
+          scale: box.scale,
+        };
+      }
+    }),
+  };
 
-  const [windowList, setwindowList] = useState(splitter);
+  useEffect(() => {
+    console.log(splitInfo);
+  }, [splitInfo]);
 
   return (
     <main className="flex items-stretch justify-stretch h-screen">
       {
-        splitter.childs.map((box, index) => {
-          return (
-            <>
-              {
-                // 각 window 사이의 구분 선
-                index > 0
-                ? <div className="border-2 border-gray-300"/>
-                : null
-              }
-              <box.boxWindow
-                scale={1}
-                key={index}
-              />
-            </>
-          )
-        })
+        <SpliterWindow
+          isVertical={splitter.isVertical}
+          childs={splitter.childs}
+        />
       }
     </main>
   );

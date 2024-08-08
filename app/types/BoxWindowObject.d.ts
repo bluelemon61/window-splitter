@@ -1,6 +1,4 @@
 export interface BoxWindowObject {
-    scale?: number | undefined
-    boxWindow: ({ scale }: {
-        scale?: number | undefined;
-    }) => JSX.Element
+  color?: string;
+  scale?: number | undefined;
 }
