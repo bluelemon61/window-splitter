@@ -2,12 +2,13 @@
 
 import useSplitInfo from "./hooks/useSplitInfo";
 import { BoxWindowObject } from "./types/BoxWindowObject";
-import useSelect from "./hooks/useSelect";
+import useLocalStorage from "./hooks/useLocalStorage";
 import crypto from "crypto";
 
 export default function Navigator() {
   const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
-  const [windowSelect, setWindowSelect] = useSelect("WINDOW-SPLITTER-SELECT");
+  const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
+  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
 
   const windowAdder = (color: string) => {
     const boxWindowObject: BoxWindowObject = {
@@ -33,45 +34,55 @@ export default function Navigator() {
   };
 
   const windowSelector = (color: string) => {
+    if (windowSelect === color) {
+      setWindowSelect(null);
+    }
+
     if (splitInfo.childs.length) {
-      if (windowSelect === color) setWindowSelect(null);
-      else setWindowSelect(color);
+      setWindowSelect(color);
     } else {
       windowAdder(color);
     }
   }
 
+  const mouseDownHandler = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, name: string) => {
+    if (splitInfo.childs.length) {
+      setIsDragging(true);
+      setWindowSelect(name);
+    }
+  }
+
   return (
-    <nav>
+    <nav
+      onMouseUp={(e) => {
+        setWindowSelect(null);
+        setIsDragging(false);
+      }}
+    >
       <button
         className={`p-2 bg-red-300 ${windowSelect === 'red' ? 'font-black' : ''}`}
-        onClick={(e) => {
-          windowSelector("red");
-        }}
+        onClick={(e) => windowSelector("red")}
+        onMouseDown={(e) => mouseDownHandler(e, "red")}
       >
         Red
       </button>
       <button
         className={`p-2 bg-green-300 ${windowSelect === 'green' ? 'font-black' : ''}`}
-        onClick={(e) => {
-          windowSelector("green");
-        }}
+        onClick={(e) => windowSelector("green")}
+        onMouseDown={(e) => mouseDownHandler(e, "green")}
       >
         Green
       </button>
       <button
         className={`p-2 bg-blue-300 ${windowSelect === 'blue' ? 'font-black' : ''}`}
-        onClick={(e) => {
-          windowSelector("blue");
-        }}
+        onClick={(e) => windowSelector("blue")}
+        onMouseDown={(e) => mouseDownHandler(e, "blue")}
       >
         Blue
       </button>
       <button
         className="p-2 bg-gray-300"
-        onClick={(e) => {
-          windowClear();
-        }}
+        onClick={(e) => windowClear()}
       >
         Clear
       </button>

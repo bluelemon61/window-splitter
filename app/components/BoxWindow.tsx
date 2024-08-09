@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import useSelect from "../hooks/useSelect";
+import useLocalStorage from "../hooks/useLocalStorage";
 import { BoxWindowObject } from "../types/BoxWindowObject";
 import useSplitInfo from "../hooks/useSplitInfo";
 import { Splitter } from "../types/Slplitter";
@@ -12,7 +12,8 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [positioning, setPositioning] = useState("none");
-  const [windowSelect, setWindowSelect] = useSelect("WINDOW-SPLITTER-SELECT");
+  const [windowSelect, setWindowSelect] = useLocalStorage("WINDOW-SPLITTER-SELECT");
+  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
   const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
 
   useEffect(() => {
@@ -161,7 +162,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
   const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (windowSelect) {
       setWindowSelect(null);
-
+      setIsDragging(false);
       setSplitInfo(newSpliterMaker(splitInfo, address) as Splitter);
     }
   }
@@ -170,7 +171,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
 
   return (
     <div
-      className="flex flex-col h-full"
+      className="flex flex-col h-full rounded-lg"
       style={{
         width: `${wsize}%`,
       }}
@@ -190,7 +191,10 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           })
         }
       </div>
-      <div className={`relative h-full`} ref={boxRef}>
+      <div 
+        className={`relative h-full`}
+        ref={boxRef}
+      >
         {
           windowSelect
           ? <div
@@ -205,7 +209,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                 }
                 : undefined
               }
-              onClick={windowAdderListener}
+              onMouseUp={windowAdderListener}
             >
               Positioning: {positioning},{" "}
               Mouse Position: {mousePosition.x}%,{mousePosition.y}%

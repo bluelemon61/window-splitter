@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UseSelect } from "../types/UseSelect";
+import { UseLocalStorage } from "../types/UseLocalStorage";
 
 declare global {
   interface WindowEventMap {
@@ -7,10 +7,10 @@ declare global {
   }
 }
 
-const useSelect = (key: string): UseSelect => {
-  const initSelect: string | null = null;
+const useLocalStorage = <T>(key: string): UseLocalStorage => {
+  const initValue: T | null = null;
 
-  const [localStorageData, setLocalStorageData] = useState<string | null>(initSelect);
+  const [localStorageData, setLocalStorageData] = useState<T | null>(initValue);
 
   useEffect(() => {
     try {
@@ -18,14 +18,14 @@ const useSelect = (key: string): UseSelect => {
       if (item) {
         setLocalStorageData(JSON.parse(item));
       } else {
-        localStorage.setItem(key, JSON.stringify(initSelect));
+        localStorage.setItem(key, JSON.stringify(initValue));
       }
     } catch (error) {
       console.error(error);
     }
   }, [key]);
 
-  const setSelect = (value: string | null) => {
+  const setValue = (value: T | null) => {
     try {
       setLocalStorageData(value);
       localStorage.setItem(key, JSON.stringify(value));
@@ -57,7 +57,7 @@ const useSelect = (key: string): UseSelect => {
     if (item) {
       setLocalStorageData(JSON.parse(item));
     } else {
-      localStorage.setItem(key, JSON.stringify(initSelect));
+      localStorage.setItem(key, JSON.stringify(initValue));
     }
   };
 
@@ -71,7 +71,7 @@ const useSelect = (key: string): UseSelect => {
     };
   });
 
-  return [localStorageData, setSelect];
+  return [localStorageData, setValue];
 };
 
-export default useSelect;
+export default useLocalStorage;
