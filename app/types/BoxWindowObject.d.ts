@@ -1,5 +1,7 @@
+import { BoxObject } from "./BoxObject";
+
 export interface BoxWindowObject {
-  color?: string;
   scale?: number | undefined;
+  childs: BoxObject[];
   address: string;
 }

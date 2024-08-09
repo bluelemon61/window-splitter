@@ -1,3 +1,3 @@
 export default function Blue() {
-  return <div className="bg-green"></div>;
+  return <div className="bg-blue-300 h-full w-full"></div>;
 }

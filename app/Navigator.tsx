@@ -1,19 +1,21 @@
 "use client";
 
 import useSplitInfo from "./hooks/useSplitInfo";
-import { UseSplitInfo } from "./types/UseSplitInfo";
 import { BoxWindowObject } from "./types/BoxWindowObject";
 import useSelect from "./hooks/useSelect";
 import crypto from "crypto";
 
 export default function Navigator() {
-  const [splitInfo, setSplitInfo]: UseSplitInfo = useSplitInfo("WINDOW-SPLITER");
+  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
   const [windowSelect, setWindowSelect] = useSelect("WINDOW-SPLITTER-SELECT");
 
   const windowAdder = (color: string) => {
     const boxWindowObject: BoxWindowObject = {
-      color,
       address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+      childs:[{
+        name: color,
+        address: crypto.createHash('sha256').update((new Date()).toISOString()+color).digest('base64'),
+      }]
     };
 
     setSplitInfo({

@@ -4,8 +4,10 @@ import { BoxWindowObject } from "../types/BoxWindowObject";
 import useSplitInfo from "../hooks/useSplitInfo";
 import { Splitter } from "../types/Slplitter";
 import crypto from "crypto";
+import boxList from "../boxes/boxList";
+import { BoxObject } from "../types/BoxObject";
 
-export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWindowObject) {
+export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObject) {
   const wsize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -65,10 +67,13 @@ export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWi
   }, [mousePosition]);
 
   const newSpliterMaker = (data: BoxWindowObject | Splitter, address: string): BoxWindowObject | Splitter => {
-    if ('childs' in data) {
+    if ('isVertical' in data) {
       const newWindow: BoxWindowObject = {
-        color: windowSelect ?? undefined,
         address: crypto.createHash('sha256').update((new Date()).toISOString()+address).digest('base64'),
+        childs: [{
+          name: windowSelect,
+          address: crypto.createHash('sha256').update((new Date()).toISOString()+windowSelect).digest('base64'),
+        }],
       }; 
       let addIdx = -1;
 
@@ -120,6 +125,17 @@ export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWi
                 addIdx = index+1;
                 return child;
               }
+            case 'middle':
+              return {
+                ...child,
+                childs: [
+                  ...child.childs,
+                  {
+                    name: windowSelect,
+                    address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                  }
+                ] as BoxObject[],
+              } as BoxWindowObject
             default:
               return child;
           }
@@ -144,12 +160,13 @@ export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWi
 
   const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (windowSelect) {
-      const windowtype = windowSelect;
       setWindowSelect(null);
 
       setSplitInfo(newSpliterMaker(splitInfo, address) as Splitter);
     }
   }
+
+  const [selectedTab, setSelectedTab] = useState<number>(0);
 
   return (
     <div
@@ -158,7 +175,21 @@ export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWi
         width: `${wsize}%`,
       }}
     >
-      <div className="bg-black text-white">nav</div>
+      <div className="bg-black text-white">
+        {
+          childs.map((child, index) => {
+            return (
+              <button
+                key={index}
+                className={`p-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''}`}
+                onClick={(e) => setSelectedTab(index)}
+              >
+                {child.name}
+              </button>
+            )
+          })
+        }
+      </div>
       <div className={`relative h-full`} ref={boxRef}>
         {
           windowSelect
@@ -182,9 +213,11 @@ export default function BoxWindow({ color = "white", scale = 1 , address}: BoxWi
           : undefined
         }
         <div
-          className={`flex flex-col justify-center items-center w-full h-full bg-${color}-300`}
+          className={`flex flex-col justify-center items-center w-full h-full`}
         >
-          content
+          {
+            boxList[childs[selectedTab].name ?? 'error']()
+          }
         </div>
       </div>
     </div>
