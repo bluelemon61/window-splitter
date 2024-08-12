@@ -15,8 +15,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
   const [positioning, setPositioning] = useState("none");
   const [dragTabIndex, setDragTabIndex] = useState(-1);
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
-  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
-  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
+  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
+  const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
+  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITTER");
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -194,9 +195,16 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
 
   const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (windowSelect) {
+      setDraggedObject(null);
       setWindowSelect(null);
       setIsDragging(false);
-      setSplitInfo(newSpliterMaker(splitInfo, address) as Splitter);
+
+      // 새로운 Window 추가
+      const newSplitInfo = newSpliterMaker(splitInfo, address);
+      // 만약 새로운 Window 추가가 아닌 기존 Window의 위치 이동(drag)이라면 변경 전 Window 정보를 삭제한다.
+      console.log(dragTabIndex);
+      const newSplitInfoDeleted = draggedObject ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
+      setSplitInfo(newSplitInfoDeleted as Splitter);
     }
   }
 
@@ -255,6 +263,15 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
     setSplitInfo(selectTabMaker(splitInfo, index) as Splitter);
   }
 
+  const mouseDownHandler = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>, boxObject: BoxObject, index: number) => {
+    if (splitInfo.childs.length) {
+      setDragTabIndex(index);
+      setIsDragging(true);
+      setWindowSelect(boxObject.name);
+      setDraggedObject(boxObject.address)
+    }
+  }
+
   return (
     <div
       className="flex flex-col h-full rounded-lg"
@@ -288,6 +305,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
                   onMouseOver={(e) => {
                     if (isDragging) setDragTabIndex(index);
                   }}
+                  onMouseDown={(e) => mouseDownHandler(e, child, index)}
                 >
                   {child.name}
                 </button>

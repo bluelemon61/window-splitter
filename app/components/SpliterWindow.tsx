@@ -11,7 +11,8 @@ export default function SpliterWindow({
   const wsize = 100;
 
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
-  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
+  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
+  const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
 
   function isSplitter(box: any): box is Splitter {
     return (box as Splitter).isVertical !== undefined;
@@ -23,6 +24,7 @@ export default function SpliterWindow({
       onMouseUp={(e) => {
         setWindowSelect(null);
         setIsDragging(false);
+        setDraggedObject(null);
       }}
     >
       {

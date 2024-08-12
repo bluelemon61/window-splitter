@@ -6,9 +6,10 @@ import useLocalStorage from "./hooks/useLocalStorage";
 import crypto from "crypto";
 
 export default function Navigator() {
-  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
+  const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITTER");
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
-  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
+  const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
+  const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
 
   const windowAdder = (color: string) => {
     const boxWindowObject: BoxWindowObject = {
@@ -58,6 +59,7 @@ export default function Navigator() {
       onMouseUp={(e) => {
         setWindowSelect(null);
         setIsDragging(false);
+        setDraggedObject(null);
       }}
     >
       <button
