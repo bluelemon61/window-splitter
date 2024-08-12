@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import useLocalStorage from "../hooks/useLocalStorage";
 import { BoxWindowObject } from "../types/BoxWindowObject";
 import useSplitInfo from "../hooks/useSplitInfo";
@@ -10,9 +10,11 @@ import { BoxObject } from "../types/BoxObject";
 export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObject) {
   const wsize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
+  const tabRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [positioning, setPositioning] = useState("none");
-  const [windowSelect, setWindowSelect] = useLocalStorage("WINDOW-SPLITTER-SELECT");
+  const [dragTabIndex, setDragTabIndex] = useState(-1);
+  const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
   const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITER-DRAG");
   const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITER");
 
@@ -30,6 +32,19 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           x: parseFloat(percentX.toFixed(2)),
           y: parseFloat(percentY.toFixed(2)),
         });
+      }
+
+      if (tabRef.current) {
+        const rect = tabRef.current.getBoundingClientRect();
+        const relativeX = event.clientX - rect.left;
+        const relativeY = event.clientY - rect.top;
+
+        const percentX = (relativeX / rect.width) * 100;
+        const percentY = (relativeY / rect.height) * 100;
+
+        if (percentX < 0 || 100 < percentX || percentY < 0 || 100 < percentY) {
+          setDragTabIndex(-1);
+        }
       }
     };
 
@@ -67,8 +82,8 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
     windowPositioner();
   }, [mousePosition]);
 
-  const newSpliterMaker = (data: BoxWindowObject | Splitter, address: string): BoxWindowObject | Splitter => {
-    if ('isVertical' in data) {
+  const newSpliterMaker = (data: Splitter | BoxWindowObject, address: string): BoxWindowObject | Splitter => {
+    if ('isVertical' in data) { // Splitter일 경우
       const newWindow: BoxWindowObject = {
         address: crypto.createHash('sha256').update((new Date()).toISOString()+address).digest('base64'),
         childs: [{
@@ -80,7 +95,6 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
 
       const newChilds = data.childs.map((child, index) => {
         if (child.address === address) {
-          console.log(address);
           switch(positioning) {
             case 'left':
               if (data.isVertical) {
@@ -137,14 +151,30 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                   }
                 ] as BoxObject[],
               } as BoxWindowObject
+            case 'none':
+              if (!('isVertical' in child)) {
+                const newTab = {
+                    name: windowSelect,
+                    address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
+                  }
+              
+                const newBoxChilds = child.childs
+
+                if (dragTabIndex > -1) {
+                  newBoxChilds.splice(dragTabIndex, 0, newTab);
+                }
+
+                return {
+                  ...child,
+                  childs: newBoxChilds,
+                } as BoxWindowObject
+              }
             default:
               return child;
           }
         }
         return newSpliterMaker(child, address)
       });
-
-      console.log(addIdx, newChilds);
 
       if (addIdx > -1) {
         newChilds.splice(addIdx, 0, newWindow);
@@ -159,7 +189,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
     }
   }
 
-  const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const windowAdderListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (windowSelect) {
       setWindowSelect(null);
       setIsDragging(false);
@@ -175,21 +205,49 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
       style={{
         width: `${wsize}%`,
       }}
+      onMouseUp={(e) => {
+        setWindowSelect(null);
+        setIsDragging(false);
+      }}
     >
-      <div className="bg-black text-white">
+      <div 
+        className="bg-black text-white flex py-1"
+        ref={tabRef}
+      >
         {
           childs.map((child, index) => {
             return (
-              <button
-                key={index}
-                className={`p-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''}`}
-                onClick={(e) => setSelectedTab(index)}
-              >
-                {child.name}
-              </button>
+              <Fragment key={index}>
+                {
+                  // 각 Tab 사이의 구분 선
+                  <div className={`border-2 border-gray-600 m-0.5
+                                  ${index === 0 ? 'border-black' : ''}
+                                  ${dragTabIndex === index ? 'border-blue-400': ''}`} />
+                }
+                <button
+                  className={`px-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''}`}
+                  onClick={(e) => setSelectedTab(index)}
+                  onMouseOver={(e) => {
+                    if (isDragging) setDragTabIndex(index);
+                  }}
+                  onMouseUp={windowAdderListener}
+                >
+                  {child.name}
+                </button>
+              </Fragment>
             )
           })
         }
+        {/* 드래그 용 Hidden Block */}
+        <div className={`border-2 border-black m-0.5
+            ${dragTabIndex === childs.length ? 'border-blue-400': ''}`} />
+        <div
+          className={`black w-full`}
+          onMouseOver={(e) => {
+            if (isDragging) setDragTabIndex(childs.length);
+          }}
+          onMouseUp={windowAdderListener}
+        />
       </div>
       <div 
         className={`relative h-full`}
