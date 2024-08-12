@@ -7,7 +7,7 @@ import crypto from "crypto";
 import boxList from "../boxes/boxList";
 import { BoxObject } from "../types/BoxObject";
 
-export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObject) {
+export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxWindowObject) {
   const wsize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const tabRef = useRef<HTMLDivElement | null>(null);
@@ -90,6 +90,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           name: windowSelect,
           address: crypto.createHash('sha256').update((new Date()).toISOString()+windowSelect).digest('base64'),
         }],
+        selected: 0,
       }; 
       let addIdx = -1;
 
@@ -150,6 +151,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                     address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
                   }
                 ] as BoxObject[],
+                selected: child.childs.length,
               } as BoxWindowObject
             case 'none':
               if (!('isVertical' in child)) {
@@ -167,7 +169,8 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                 return {
                   ...child,
                   childs: newBoxChilds,
-                } as BoxWindowObject
+                  selected: dragTabIndex > -1 ? dragTabIndex : child.selected,
+                } as BoxWindowObject;
               }
             default:
               return child;
@@ -197,7 +200,60 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
     }
   }
 
-  const [selectedTab, setSelectedTab] = useState<number>(0);
+  const deleteSpliterMaker = (data: Splitter | BoxWindowObject, address: string): Splitter | BoxWindowObject => {
+    if ('isVertical' in data) {
+      const newChilds = data.childs.map((child) => deleteSpliterMaker(child, address)).filter((child) => child.childs.length)
+
+      return {
+        ...data,
+        childs: newChilds,
+      }
+    } else {
+      const isOverflow = data.selected < data.childs.length - 1 ? false : true;
+      let newSelected = data.selected;
+
+      const newChilds = data.childs.filter((child, index) => {
+        if (child.address === address && isOverflow) newSelected -= 1;
+        return child.address !== address
+      });
+
+      return {
+        ...data,
+        childs: newChilds,
+        selected: newSelected,
+      }
+    }
+  }
+
+  const windowDeleterListener = (e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    if (childs.length > selected) {
+      setWindowSelect(null);
+      setIsDragging(false);
+      setSplitInfo(deleteSpliterMaker(splitInfo, childs[selected].address) as Splitter);
+    }
+  }
+
+  const setSelected = (index: number) => {
+    const selectTabMaker = (data: Splitter | BoxWindowObject, index: number): Splitter | BoxWindowObject => {
+      if ('isVertical' in data) {
+        return {
+          ...data,
+          childs: data.childs.map((child) => selectTabMaker(child, index)),
+        };
+      } else {
+        if (data.address === address) {
+          return {
+            ...data,
+            selected: index,
+          };
+        } else {
+          return data;
+        }
+      }
+    }
+
+    setSplitInfo(selectTabMaker(splitInfo, index) as Splitter);
+  }
 
   return (
     <div
@@ -220,15 +276,15 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                   <div 
                     className={`border-2 border-gray-600 m-0.5
                       ${index === 0 ? 'border-black' : ''}
-                      ${dragTabIndex === index ? 'border-blue-400': ''}`}
+                      ${dragTabIndex === index && isDragging ? 'border-blue-400': ''}`}
                     onMouseOver={(e) => {
                       if (isDragging) setDragTabIndex(index);
                     }}
                   />
                 }
                 <button
-                  className={`px-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''} hover:bg-gray-600`}
-                  onClick={(e) => setSelectedTab(index)}
+                  className={`px-1 rounded ${selected === index ? 'bg-gray-400' : ''} hover:bg-gray-600`}
+                  onClick={(e) => setSelected(index)}
                   onMouseOver={(e) => {
                     if (isDragging) setDragTabIndex(index);
                   }}
@@ -242,7 +298,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
         {/* 드래그 용 Hidden Block */}
         <div
           className={`border-2 border-black m-0.5
-            ${dragTabIndex === childs.length ? 'border-blue-400': ''}`}
+            ${dragTabIndex === childs.length && isDragging ? 'border-blue-400': ''}`}
           onMouseOver={(e) => {
             if (isDragging) setDragTabIndex(childs.length);
           }}
@@ -282,12 +338,13 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           className={`flex flex-col justify-center items-center w-full h-full`}
         >
           {
-            childs.length > selectedTab
-            ? boxList[childs[selectedTab].name ?? 'error']()
-            : undefined
+            childs.length > selected && selected > -1
+            ? boxList[childs[selected].name ?? 'error']()
+            : boxList['error']()
           }
           <button
             className="absolute top-1 right-1 bg-black rounded-md text-white px-2 opacity-30 hover:opacity-100"
+            onClick={windowDeleterListener}
           >
             X
           </button>

@@ -16,7 +16,8 @@ export default function Navigator() {
       childs:[{
         name: color,
         address: crypto.createHash('sha256').update((new Date()).toISOString()+color).digest('base64'),
-      }]
+      }],
+      selected: 0,
     };
 
     setSplitInfo({
