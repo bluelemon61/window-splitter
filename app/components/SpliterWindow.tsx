@@ -14,7 +14,7 @@ export default function SpliterWindow({
   }
 
   return (
-    <div className={`flex items-stretch justify-stretch w-full h-full ${isVertical ? 'flex-col' : ''}`}>
+    <div className={`flex w-full h-full items-stretch justify-stretch ${isVertical ? 'flex-col' : ''}`}>
       {
         childs.map((box, index) => {
           if (isSplitter(box)) {
@@ -42,5 +42,4 @@ export default function SpliterWindow({
       }
     </div>
   )
-  
 }

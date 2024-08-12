@@ -8,7 +8,7 @@ export default function Home() {
   const [splitInfo, setSplitInfo]: UseSplitInfo = useSplitInfo("WINDOW-SPLITER");
 
   return (
-    <main className="flex items-stretch justify-stretch h-screen">
+    <main className="flex items-stretch justify-stretch w-full h-full">
       {
         <SpliterWindow
           isVertical={splitInfo.isVertical}

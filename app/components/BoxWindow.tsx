@@ -205,10 +205,7 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
       style={{
         width: `${wsize}%`,
       }}
-      onMouseUp={(e) => {
-        setWindowSelect(null);
-        setIsDragging(false);
-      }}
+      onMouseUp={windowAdderListener}
     >
       <div 
         className="bg-black text-white flex py-1"
@@ -220,17 +217,21 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
               <Fragment key={index}>
                 {
                   // 각 Tab 사이의 구분 선
-                  <div className={`border-2 border-gray-600 m-0.5
-                                  ${index === 0 ? 'border-black' : ''}
-                                  ${dragTabIndex === index ? 'border-blue-400': ''}`} />
+                  <div 
+                    className={`border-2 border-gray-600 m-0.5
+                      ${index === 0 ? 'border-black' : ''}
+                      ${dragTabIndex === index ? 'border-blue-400': ''}`}
+                    onMouseOver={(e) => {
+                      if (isDragging) setDragTabIndex(index);
+                    }}
+                  />
                 }
                 <button
-                  className={`px-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''}`}
+                  className={`px-1 rounded ${selectedTab === index ? 'bg-gray-400' : ''} hover:bg-gray-600`}
                   onClick={(e) => setSelectedTab(index)}
                   onMouseOver={(e) => {
                     if (isDragging) setDragTabIndex(index);
                   }}
-                  onMouseUp={windowAdderListener}
                 >
                   {child.name}
                 </button>
@@ -239,14 +240,18 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           })
         }
         {/* 드래그 용 Hidden Block */}
-        <div className={`border-2 border-black m-0.5
-            ${dragTabIndex === childs.length ? 'border-blue-400': ''}`} />
+        <div
+          className={`border-2 border-black m-0.5
+            ${dragTabIndex === childs.length ? 'border-blue-400': ''}`}
+          onMouseOver={(e) => {
+            if (isDragging) setDragTabIndex(childs.length);
+          }}
+        />
         <div
           className={`black w-full`}
           onMouseOver={(e) => {
             if (isDragging) setDragTabIndex(childs.length);
           }}
-          onMouseUp={windowAdderListener}
         />
       </div>
       <div 
@@ -267,7 +272,6 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
                 }
                 : undefined
               }
-              onMouseUp={windowAdderListener}
             >
               Positioning: {positioning},{" "}
               Mouse Position: {mousePosition.x}%,{mousePosition.y}%
@@ -278,8 +282,15 @@ export default function BoxWindow({ childs, scale = 1 , address}: BoxWindowObjec
           className={`flex flex-col justify-center items-center w-full h-full`}
         >
           {
-            boxList[childs[selectedTab].name ?? 'error']()
+            childs.length > selectedTab
+            ? boxList[childs[selectedTab].name ?? 'error']()
+            : undefined
           }
+          <button
+            className="absolute top-1 right-1 bg-black rounded-md text-white px-2 opacity-30 hover:opacity-100"
+          >
+            X
+          </button>
         </div>
       </div>
     </div>
