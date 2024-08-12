@@ -58,30 +58,34 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
 
   useEffect(() => {
     const windowPositioner = () => {
+      let newPositioning = "none";
+
       if (
         0 <= mousePosition.x && mousePosition.x <= 100 &&
         0 <= mousePosition.y && mousePosition.y <= 100
       ) {
         if (mousePosition.y < 20) {
-          setPositioning("top");
+          newPositioning = "top";
         } else if (mousePosition.y > 80) {
-          setPositioning("bottom");
+          newPositioning = "bottom";
         } else {
           if (mousePosition.x < 25) {
-            setPositioning("left");
+            newPositioning = "left";
           } else if (mousePosition.x > 75) {
-            setPositioning("right");
+            newPositioning = "right";
           } else {
-            setPositioning("middle");
+            newPositioning = "middle";
           }
         }
-      } else {
-        setPositioning("none");
+      }
+
+      if (newPositioning !== positioning) {
+        setPositioning(newPositioning);
       }
     };
 
     windowPositioner();
-  }, [mousePosition]);
+  }, [mousePosition, positioning]);
 
   const newSpliterMaker = (data: Splitter | BoxWindowObject, address: string): BoxWindowObject | Splitter => {
     if ('isVertical' in data) { // Splitter일 경우
@@ -202,7 +206,6 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
       // 새로운 Window 추가
       const newSplitInfo = newSpliterMaker(splitInfo, address);
       // 만약 새로운 Window 추가가 아닌 기존 Window의 위치 이동(drag)이라면 변경 전 Window 정보를 삭제한다.
-      console.log(dragTabIndex);
       const newSplitInfoDeleted = draggedObject ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
       setSplitInfo(newSplitInfoDeleted as Splitter);
     }
