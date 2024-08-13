@@ -7,13 +7,14 @@ import crypto from "crypto";
 import boxList from "../boxes/boxList";
 import { BoxObject } from "../types/BoxObject";
 
-export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxWindowObject) {
+export default function BoxWindow({ childs, scale = 1 , address, selected, fold}: BoxWindowObject) {
   const wsize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const tabRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [positioning, setPositioning] = useState("none");
   const [dragTabIndex, setDragTabIndex] = useState(-1);
+  const [isParentVertical, setIsParentVertical] = useState(true);
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
   const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
   const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
@@ -57,6 +58,29 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
   }, []);
 
   useEffect(() => {
+    const getParentDirection = () => {
+      let isVertical = true;
+
+      const recursiveFinder = (data: Splitter | BoxWindowObject) => {
+        if ('isVertical' in data) {
+          data.childs.forEach((child) => {
+            if (child.address === address) {
+              isVertical = data.isVertical;
+            }
+            recursiveFinder(child);
+          });
+        }
+      }
+
+      recursiveFinder(splitInfo);
+
+      return isVertical;
+    }
+
+    setIsParentVertical(getParentDirection());
+  }, [splitInfo]);
+
+  useEffect(() => {
     const windowPositioner = () => {
       let newPositioning = "none";
 
@@ -96,6 +120,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
           address: crypto.createHash('sha256').update((new Date()).toISOString()+windowSelect).digest('base64'),
         }],
         selected: 0,
+        fold: false,
       }; 
       let addIdx = -1;
 
@@ -160,7 +185,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
               } as BoxWindowObject
             case 'none':
               if (!('isVertical' in child)) {
-                const newTab = {
+                const newTab: BoxObject = {
                     name: windowSelect,
                     address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
                   }
@@ -206,19 +231,26 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
       // 새로운 Window 추가
       const newSplitInfo = newSpliterMaker(splitInfo, address);
       // 만약 새로운 Window 추가가 아닌 기존 Window의 위치 이동(drag)이라면 변경 전 Window 정보를 삭제한다.
-      const newSplitInfoDeleted = draggedObject ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
+      const newSplitInfoDeleted = draggedObject && dragTabIndex > -1 ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
       setSplitInfo(newSplitInfoDeleted as Splitter);
     }
   }
 
   const deleteSpliterMaker = (data: Splitter | BoxWindowObject, address: string): Splitter | BoxWindowObject => {
     if ('isVertical' in data) {
-      const newChilds = data.childs.map((child) => deleteSpliterMaker(child, address)).filter((child) => child.childs.length)
+      const newChilds = data.childs.map((child) => deleteSpliterMaker(child, address))
+                                    .filter((child) => child.childs.length)
+                                    .map((child) => {
+                                      if ('isVertical' in child && child.childs.length === 1) {
+                                        return child.childs[0];
+                                      }
+                                      else return child;
+                                    })
 
       return {
         ...data,
         childs: newChilds,
-      }
+      } as Splitter;
     } else {
       const isOverflow = data.selected < data.childs.length - 1 ? false : true;
       let newSelected = data.selected;
@@ -232,7 +264,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
         ...data,
         childs: newChilds,
         selected: newSelected,
-      }
+      } as BoxWindowObject;
     }
   }
 
@@ -275,16 +307,49 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
     }
   }
 
+  const foldHandler = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    const foldMaker = (data: Splitter | BoxWindowObject): Splitter | BoxWindowObject => {
+      if ('isVertical' in data) {
+        return {
+          ...data,
+          childs: data.childs.map((child) => foldMaker(child)),
+        }
+      } else {
+        if (data.address === address) {
+          return {
+            ...data,
+            fold: !data.fold,
+          }
+        } else {
+          return data;
+        }
+      }
+    }
+
+    setSplitInfo(foldMaker(splitInfo) as Splitter);
+  }
+
   return (
     <div
-      className="flex flex-col h-full rounded-lg"
+      className={
+        `flex
+        ${
+          isParentVertical
+          ? fold ? 'flex-col' : 'h-full flex-col'
+          : fold ? 'flex-row' : 'flex-col'
+        }`
+      }
       style={{
-        width: `${wsize}%`,
+        width: !isParentVertical && fold ? '' : `${wsize}%`,
       }}
       onMouseUp={windowAdderListener}
     >
       <div 
-        className="bg-black text-white flex py-1"
+        className={
+          `bg-black text-white flex 
+          ${!isParentVertical && fold ? 'flex-col px-1' : 'py-1'}
+          ${fold ? 'rounded-md' : 'rounded-t-md'}`
+        }
         ref={tabRef}
       >
         {
@@ -294,16 +359,26 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
                 {
                   // 각 Tab 사이의 구분 선
                   <div 
-                    className={`border-2 border-gray-600 m-0.5
-                      ${index === 0 ? 'border-black' : ''}
-                      ${dragTabIndex === index && isDragging ? 'border-blue-400': ''}`}
+                    className={`border-2 m-0.5
+                      ${dragTabIndex === index && isDragging 
+                          ? 'border-blue-400'
+                          : index === 0 
+                            ? 'border-black' 
+                            : 'border-gray-600'
+                      }`}
                     onMouseOver={(e) => {
                       if (isDragging) setDragTabIndex(index);
                     }}
                   />
                 }
                 <button
-                  className={`px-1 rounded ${selected === index ? 'bg-gray-400' : ''} hover:bg-gray-600`}
+                  className={
+                    `${!isParentVertical && fold ? 'py-1': 'px-1'} rounded
+                    ${selected === index ? 'bg-gray-400' : ''} hover:bg-gray-600`
+                  }
+                  style={{
+                    writingMode: !isParentVertical && fold ? 'vertical-lr' : 'initial'
+                  }}
                   onClick={(e) => setSelected(index)}
                   onMouseOver={(e) => {
                     if (isDragging) setDragTabIndex(index);
@@ -325,20 +400,33 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
           }}
         />
         <div
-          className={`black w-full`}
+          className={`black ${!isParentVertical && fold ? 'h-full': 'w-full'}`}
           onMouseOver={(e) => {
             if (isDragging) setDragTabIndex(childs.length);
           }}
         />
+        <button 
+          className={
+            `bg-black rounded-md text-white px-2 hover:bg-gray-600
+            ${!isParentVertical && fold ? 'mb-1': 'mr-1'}`
+          }
+          onClick={foldHandler}
+        >
+          { 
+            isParentVertical 
+              ? fold ? '∨' : '∧'
+              : fold ? '>' : '<' 
+          }
+        </button>
       </div>
       <div 
-        className={`relative h-full`}
+        className={`relative h-full ${fold ? 'hidden' : ''}`}
         ref={boxRef}
       >
         {
           windowSelect
           ? <div
-              className="absolute w-full h-full bg-white opacity-0 hover:opacity-50"
+              className="absolute w-full h-full bg-white/50 border-2 rounded opacity-0 border-white hover:opacity-100"
               style={
                 positioning !== 'none' 
                 ? {
@@ -350,13 +438,13 @@ export default function BoxWindow({ childs, scale = 1 , address, selected}: BoxW
                 : undefined
               }
             >
-              Positioning: {positioning},{" "}
-              Mouse Position: {mousePosition.x}%,{mousePosition.y}%
+              {/* Positioning: {positioning},{" "}
+              Mouse Position: {mousePosition.x}%,{mousePosition.y}% */}
             </div>
           : undefined
         }
         <div
-          className={`flex flex-col justify-center items-center w-full h-full`}
+          className={`flex flex-col justify-center items-center w-full h-full rounded-b-md`}
         >
           {
             childs.length > selected && selected > -1

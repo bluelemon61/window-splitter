@@ -46,7 +46,13 @@ export default function SpliterWindow({
                   // 각 window 사이의 구분 선
                   index > 0 && <div className="border-2 border-gray-500 m-1" />
                 }
-                <BoxWindow childs={box.childs} scale={1} address={`${box.address}`} selected={box.selected}/>
+                <BoxWindow 
+                  childs={box.childs} 
+                  scale={1} 
+                  address={box.address} 
+                  selected={box.selected} 
+                  fold={box.fold}
+                />
               </Fragment>
             );
           }

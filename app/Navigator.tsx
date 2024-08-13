@@ -19,6 +19,7 @@ export default function Navigator() {
         address: crypto.createHash('sha256').update((new Date()).toISOString()+color).digest('base64'),
       }],
       selected: 0,
+      fold: false,
     };
 
     setSplitInfo({
