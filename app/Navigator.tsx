@@ -13,6 +13,7 @@ export default function Navigator() {
 
   const windowAdder = (color: string) => {
     const boxWindowObject: BoxWindowObject = {
+      scale: 1,
       address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
       childs:[{
         name: color,
@@ -30,6 +31,7 @@ export default function Navigator() {
 
   const windowClear = () => {
     setSplitInfo({
+      scale: 1,
       isVertical: false,
       childs: [],
       address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),

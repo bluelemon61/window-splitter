@@ -7,8 +7,8 @@ import crypto from "crypto";
 import boxList from "../boxes/boxList";
 import { BoxObject } from "../types/BoxObject";
 
-export default function BoxWindow({ childs, scale = 1 , address, selected, fold}: BoxWindowObject) {
-  const wsize = Math.min(Math.ceil(scale * 100), 100);
+export default function BoxWindow({ childs, scale, address, selected, fold}: BoxWindowObject) {
+  const windowSize = Math.min(Math.ceil(scale * 100), 100);
   const boxRef = useRef<HTMLDivElement | null>(null);
   const tabRef = useRef<HTMLDivElement | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -115,6 +115,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
   const newSpliterMaker = (data: Splitter | BoxWindowObject, address: string): BoxWindowObject | Splitter => {
     if ('isVertical' in data) { // Splitter일 경우
       const newWindow: BoxWindowObject = {
+        scale: 1,
         address: crypto.createHash('sha256').update((new Date()).toISOString()+address).digest('base64'),
         childs: [{
           name: windowSelect,
@@ -132,9 +133,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
               if (data.isVertical) {
                 return {
                   isVertical: false,
-                  childs: [newWindow, child],
+                  childs: [{...newWindow, scale: 1/2}, {...child, scale: 1/2}],
                   address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-                };
+                } as Splitter;
               } else {
                 addIdx = index;
                 return child;
@@ -143,9 +144,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
               if (data.isVertical) {
                 return {
                   isVertical: false,
-                  childs: [child, newWindow],
+                  childs: [{...child, scale: 1/2}, {...newWindow, scale: 1/2}],
                   address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-                };
+                } as Splitter;
               } else {
                 addIdx = index+1;
                 return child;
@@ -154,9 +155,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
               if (!data.isVertical) {
                 return {
                   isVertical: true,
-                  childs: [newWindow, child],
+                  childs: [{...newWindow, scale: 1/2}, {...child, scale: 1/2}],
                   address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-                };
+                } as Splitter;
               } else {
                 addIdx = index;
                 return child;
@@ -165,9 +166,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
               if (!data.isVertical) {
                 return {
                   isVertical: true,
-                  childs: [child, newWindow],
+                  childs: [{...child, scale: 1/2}, {...newWindow, scale: 1/2}],
                   address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-                };
+                } as Splitter;
               } else {
                 addIdx = index+1;
                 return child;
@@ -214,9 +215,20 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
         newChilds.splice(addIdx, 0, newWindow);
       }
 
+      let unfoldCount = 0;
+      newChilds.forEach((child) => {
+        unfoldCount++;
+        if ('fold' in child && child.fold) unfoldCount--;
+      })
+
       return {
         ...data,
-        childs: newChilds,
+        childs: newChilds.map((child) => {
+          return {
+            ...child,
+            scale: unfoldCount > 0 ? 1/unfoldCount : 1,
+          }
+        }),
       }
     } else {
       return data
@@ -241,6 +253,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
 
   const deleteSpliterMaker = (data: Splitter | BoxWindowObject, address: string): Splitter | BoxWindowObject => {
     if ('isVertical' in data) {
+      let unfoldCount = 0;
       const newChilds = data.childs.map((child) => deleteSpliterMaker(child, address))
                                     .filter((child) => child.childs.length)
                                     .map((child) => {
@@ -249,10 +262,20 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
                                       }
                                       else return child;
                                     })
+      
+      newChilds.forEach((child) => {
+        unfoldCount++;
+        if ('fold' in child && child.fold) unfoldCount--;
+      })
 
       return {
         ...data,
-        childs: newChilds,
+        childs: newChilds.map((child) => {
+          return {
+            ...child,
+            scale: unfoldCount > 0 ? 1/unfoldCount : 1,
+          }
+        }),
       } as Splitter;
     } else {
       const isOverflow = data.selected < data.childs.length - 1 ? false : true;
@@ -315,9 +338,20 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
   const foldHandler = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     const foldMaker = (data: Splitter | BoxWindowObject): Splitter | BoxWindowObject => {
       if ('isVertical' in data) {
+        let unfoldCount = 0;
         return {
           ...data,
-          childs: data.childs.map((child) => foldMaker(child)),
+          childs: data.childs.map((child) => {
+            const newChild = foldMaker(child);
+            unfoldCount++;
+            if ('fold' in newChild && newChild.fold) unfoldCount--;
+            return newChild
+          }).map((child) => {
+            return {
+              ...child,
+              scale: unfoldCount > 0 ? 1/unfoldCount : 1,
+            }
+          })
         }
       } else {
         if (data.address === address) {
@@ -354,7 +388,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
         }`
       }
       style={{
-        width: !isParentVertical && fold ? '' : `${wsize}%`,
+        flexBasis: !fold ? `${windowSize}%` : undefined,
       }}
       onMouseUp={windowAdderListener}
     >

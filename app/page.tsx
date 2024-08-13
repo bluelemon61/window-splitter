@@ -50,12 +50,14 @@ export default function Home() {
       {
         fullscreenObject
         ? <BoxWindow 
+            scale={1}
             fold={false}
             selected={fullscreenObject.selected}
             childs={fullscreenObject.childs}
             address={fullscreenObject.address}
           />
         : <SpliterWindow
+            scale={splitInfo.scale}
             isVertical={splitInfo.isVertical}
             childs={splitInfo.childs}
             address={splitInfo.address}

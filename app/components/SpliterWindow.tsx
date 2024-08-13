@@ -4,11 +4,12 @@ import BoxWindow from "./BoxWindow";
 import useLocalStorage from "../hooks/useLocalStorage";
 
 export default function SpliterWindow({
-  isVertical = false,
+  scale,
+  isVertical,
   childs = [],
   address,
 }: Splitter) {
-  const wsize = 100;
+  const windowSize = Math.min(Math.ceil(scale * 100), 100);
 
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
   const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
@@ -26,36 +27,44 @@ export default function SpliterWindow({
         setIsDragging(false);
         setDraggedObject(null);
       }}
+      style={{
+        flexBasis: `${windowSize}%`,
+      }}
     >
       {
         childs.map((box, index) => {
-          if (isSplitter(box)) {
-            return (
-              <Fragment key={index}>
-                {
-                  // 각 window 사이의 구분 선
-                  index > 0 && <div className="border-2 border-gray-500 m-1" />
-                }
-                <SpliterWindow isVertical={box.isVertical} childs={box.childs} address={`${box.address}`}/>
-              </Fragment>
-            );
-          } else {
-            return (
-              <Fragment key={index}>
-                {
-                  // 각 window 사이의 구분 선
-                  index > 0 && <div className="border-2 border-gray-500 m-1" />
-                }
-                <BoxWindow 
-                  childs={box.childs} 
-                  scale={1} 
-                  address={box.address} 
-                  selected={box.selected} 
-                  fold={box.fold}
-                />
-              </Fragment>
-            );
-          }
+          return (
+            <Fragment key={index}>
+              {
+                // 각 window 사이의 구분 선
+                index > 0 && 
+                  <div 
+                    className={`relative flex m-1 ${isVertical ? 'flex-col w-full' : 'h-full'} hover:bg-blue-400`}
+                    onMouseDown={(e) => {
+
+                    }}
+                  >
+                    <div className={`self-center border-2 border-gray-500 ${isVertical ? 'w-16' : 'h-16'}`}/>
+                  </div>
+              }
+              {
+                isSplitter(box)
+                ? <SpliterWindow 
+                    isVertical={box.isVertical}
+                    scale={box.scale}
+                    childs={box.childs}
+                    address={`${box.address}`}
+                  />
+                : <BoxWindow 
+                    childs={box.childs} 
+                    scale={box.scale} 
+                    address={box.address} 
+                    selected={box.selected} 
+                    fold={box.fold}
+                  />
+              }
+            </Fragment>
+          );
         })
       }
     </div>
