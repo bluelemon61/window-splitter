@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { UseLocalStorage } from "../types/UseLocalStorage";
 
 declare global {
   interface WindowEventMap {
@@ -7,7 +6,7 @@ declare global {
   }
 }
 
-const useLocalStorage = <T>(key: string): UseLocalStorage => {
+const useLocalStorage = <T>(key: string): [T | null, (value: T | null) => void] => {
   const initValue: T | null = null;
 
   const [localStorageData, setLocalStorageData] = useState<T | null>(initValue);

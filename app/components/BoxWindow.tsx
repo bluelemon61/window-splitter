@@ -18,6 +18,7 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
   const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
   const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
+  const [fullscreenAddress, setFullScreenAddress] = useLocalStorage<string>("WINDOW-SPLITTER-FULLSCREEN");
   const [splitInfo, setSplitInfo] = useSplitInfo("WINDOW-SPLITTER");
 
   useEffect(() => {
@@ -231,7 +232,9 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
       // 새로운 Window 추가
       const newSplitInfo = newSpliterMaker(splitInfo, address);
       // 만약 새로운 Window 추가가 아닌 기존 Window의 위치 이동(drag)이라면 변경 전 Window 정보를 삭제한다.
-      const newSplitInfoDeleted = draggedObject && dragTabIndex > -1 ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
+      const newSplitInfoDeleted = 
+        draggedObject && (dragTabIndex > -1 || positioning !== 'none')
+          ? deleteSpliterMaker(newSplitInfo, draggedObject) : newSplitInfo;
       setSplitInfo(newSplitInfoDeleted as Splitter);
     }
   }
@@ -259,6 +262,8 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
         if (child.address === address && isOverflow) newSelected -= 1;
         return child.address !== address
       });
+
+      if (newChilds.length === 0) setFullScreenAddress(null);
 
       return {
         ...data,
@@ -327,6 +332,15 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
     }
 
     setSplitInfo(foldMaker(splitInfo) as Splitter);
+  }
+
+  const fullscreenHandler = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+    if (fullscreenAddress) {
+      setFullScreenAddress(null);
+    } else {
+      setFullScreenAddress(address);
+    }
+    
   }
 
   return (
@@ -409,6 +423,18 @@ export default function BoxWindow({ childs, scale = 1 , address, selected, fold}
           className={
             `bg-black rounded-md text-white px-2 hover:bg-gray-600
             ${!isParentVertical && fold ? 'mb-1': 'mr-1'}`
+          }
+          onClick={fullscreenHandler}
+        >
+          {
+            fullscreenAddress ? '▣' : '▢'
+          }
+        </button>
+        <button 
+          className={
+            `bg-black rounded-md text-white px-2 hover:bg-gray-600
+            ${!isParentVertical && fold ? 'mb-1': 'mr-1'}
+            ${fullscreenAddress ? 'hidden' : ''}`
           }
           onClick={foldHandler}
         >
