@@ -9,12 +9,15 @@ import { BoxObject } from "../types/BoxObject";
 
 export default function BoxWindow({ childs, scale, address, selected, fold}: BoxWindowObject) {
   const windowSize = Math.min(Math.ceil(scale * 100), 100);
+
   const boxRef = useRef<HTMLDivElement | null>(null);
   const tabRef = useRef<HTMLDivElement | null>(null);
+
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [positioning, setPositioning] = useState("none");
   const [dragTabIndex, setDragTabIndex] = useState(-1);
   const [isParentVertical, setIsParentVertical] = useState(true);
+  
   const [windowSelect, setWindowSelect] = useLocalStorage<string>("WINDOW-SPLITTER-SELECT");
   const [isDragging, setIsDragging] = useLocalStorage<boolean>("WINDOW-SPLITTER-DRAG");
   const [draggedObject, setDraggedObject] = useLocalStorage<string>("WINDOW-SPLITTER-DRAGGED-OBJECT");
