@@ -537,24 +537,27 @@ export default function BoxWindow({ childs, scale, address, selected, fold, refs
               Mouse Position: {mousePosition.x}%,{mousePosition.y}% */}
           </div>
         ) : undefined}
-        {childs.map((child) => {
-          return (
-            <div
-              key={child.name}
-              className={`flex flex-col justify-center items-center w-full h-full rounded-b-md ${
-                child.name !== childs[selected].name ? "hidden w-0 h-0" : ""
-              }`}
-              ref={refs![child.name ?? ""]}
-            >
-              <button
-                className="absolute top-1 right-1 bg-black rounded-md text-white px-2 opacity-30 hover:opacity-100 z-20"
-                onClick={windowDeleterListener}
+        {
+          // Grid Component
+          childs.map((child) => {
+            return (
+              <div
+                key={child.name}
+                className={`flex flex-col justify-center items-center w-full h-full rounded-b-md ${
+                  child.name !== childs[selected].name ? "hidden w-0 h-0" : ""
+                }`}
+                ref={refs![child.name ?? ""]}
               >
-                X
-              </button>
-            </div>
-          );
-        })}
+                <button
+                  className="absolute top-1 right-1 bg-black rounded-md text-white px-2 opacity-30 hover:opacity-100 z-20"
+                  onClick={windowDeleterListener}
+                >
+                  X
+                </button>
+              </div>
+            );
+          })
+        }
       </div>
     </div>
   );
