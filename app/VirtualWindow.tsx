@@ -81,7 +81,10 @@ export default function VirtualWindow({ refs }: { refs: { [key: string]: React.R
                   width: dimensions[boxKey].width,
                   height: dimensions[boxKey].height,
                 }
-              : undefined
+              : {
+                  width: 0,
+                  height: 0,
+                }
           }
           key={`virtual+${boxList[boxKey].name}`}
         >
