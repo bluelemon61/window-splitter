@@ -68,17 +68,21 @@ export default function VirtualWindow({ refs }: { refs: { [key: string]: React.R
 
   return (
     dimensions &&
-    Object.keys(dimensions).map((boxKey) => {
+    Object.keys(boxList).map((boxKey) => {
       if (boxList[boxKey].name === "ErrorBox") return undefined;
       return (
         <div
           className={`absolute z-20 overflow-hidden`}
-          style={{
-            top: dimensions[boxKey].top,
-            left: dimensions[boxKey].left,
-            width: dimensions[boxKey].width,
-            height: dimensions[boxKey].height,
-          }}
+          style={
+            dimensions[boxKey]
+              ? {
+                  top: dimensions[boxKey].top,
+                  left: dimensions[boxKey].left,
+                  width: dimensions[boxKey].width,
+                  height: dimensions[boxKey].height,
+                }
+              : undefined
+          }
           key={`virtual+${boxList[boxKey].name}`}
         >
           {/* <div className="absolute">
