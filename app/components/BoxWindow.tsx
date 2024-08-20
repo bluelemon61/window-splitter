@@ -4,7 +4,6 @@ import { BoxWindowObject } from "../types/BoxWindowObject";
 import useSplitInfo from "../hooks/useSplitInfo";
 import { Splitter } from "../types/Slplitter";
 import crypto from "crypto";
-import boxList from "../boxes/boxList";
 import { BoxObject } from "../types/BoxObject";
 
 export default function BoxWindow({ childs, scale, address, selected, fold, refs }: BoxWindowObject) {

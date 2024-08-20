@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigator from "./Navigator";
 import MouseTracker from "./MouseTracker";
-import VirtualWindow from "./VirtualWindow";
 
 const inter = Inter({ subsets: ["latin"] });
 
