@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigator from "./Navigator";
 import MouseTracker from "./MouseTracker";
+import VirtualWindow from "./VirtualWindow";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,11 +22,11 @@ export default function RootLayout({
       <body
         className={inter.className}
         style={{
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100vh', 
-          width: '100vw',
-          overflow: 'hidden',
+          display: "flex",
+          flexDirection: "column",
+          height: "100vh",
+          width: "100vw",
+          overflow: "hidden",
         }}
       >
         <Navigator />

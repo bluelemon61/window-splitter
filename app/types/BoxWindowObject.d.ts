@@ -6,4 +6,5 @@ export interface BoxWindowObject {
   selected: number;
   childs: BoxObject[];
   address: string;
+  refs?: { [key: string]: RefObject<HTMLDivElement> };
 }

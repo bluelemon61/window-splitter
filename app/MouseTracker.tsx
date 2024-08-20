@@ -27,11 +27,11 @@ export default function Navigator() {
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
     };
-  }, [isDragging])
+  }, [isDragging]);
 
   return (
     <div
-      className="absolute bg-gray-200 rounded p-1 z-10"
+      className="absolute bg-gray-200 rounded p-1 z-30"
       style={{
         left: `${mousePosition.x}px`,
         top: `${mousePosition.y + 40}px`,

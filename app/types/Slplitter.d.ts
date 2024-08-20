@@ -5,4 +5,5 @@ export interface Splitter {
   isVertical: boolean;
   childs: (BoxWindowObject | Splitter)[];
   address: string;
+  refs?: { [key: string]: RefObject<HTMLDivElement> };
 }
