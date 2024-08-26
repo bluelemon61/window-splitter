@@ -1,7 +1,42 @@
 import { useEffect, useState } from "react";
 import { Splitter } from "../types/Slplitter";
 import { UseSplitInfo } from "../types/UseSplitInfo";
+import splitInit from "@/app/constants/splitterInit.json";
 import crypto from "crypto";
+import boxList from "../boxes/boxList";
+
+const splitterInitGenerator = (): Splitter => {
+  return {
+    isVertical: false,
+    address: crypto
+      .createHash("sha256")
+      .update(new Date().toISOString() + "splitter")
+      .digest("base64"),
+    scale: 1,
+    childs: [
+      {
+        selected: 0,
+        fold: false,
+        address: crypto
+          .createHash("sha256")
+          .update(new Date().toISOString() + "boxWindow")
+          .digest("base64"),
+        scale: 1,
+        childs: Object.keys(boxList)
+          .filter((boxName) => boxName !== "error")
+          .map((boxName, index) => {
+            return {
+              name: boxName,
+              address: crypto
+                .createHash("sha256")
+                .update(new Date().toISOString() + index)
+                .digest("base64"),
+            };
+          }),
+      },
+    ],
+  };
+};
 
 declare global {
   interface WindowEventMap {
@@ -10,14 +45,9 @@ declare global {
 }
 
 const useSplitInfo = (key: string): UseSplitInfo => {
-  const initSplitter: Splitter = {
-    isVertical: false,
-    childs: [],
-    address: crypto.createHash('sha256').update((new Date()).toISOString()).digest('base64'),
-  };
+  const initSplitter: Splitter = "isVertical" in splitInit ? (splitInit as Splitter) : splitterInitGenerator();
 
-  const [localStorageData, setLocalStorageData] =
-    useState<Splitter>(initSplitter);
+  const [localStorageData, setLocalStorageData] = useState<Splitter>(initSplitter);
 
   useEffect(() => {
     try {
@@ -42,7 +72,7 @@ const useSplitInfo = (key: string): UseSplitInfo => {
           detail: {
             key,
           },
-        }),
+        })
       );
     } catch (error) {
       console.error(error);
@@ -50,10 +80,7 @@ const useSplitInfo = (key: string): UseSplitInfo => {
   };
 
   const handleStorageChange = (event: CustomEvent | StorageEvent) => {
-    if (
-      event instanceof CustomEvent &&
-      (event as CustomEvent).detail.key !== key
-    ) {
+    if (event instanceof CustomEvent && (event as CustomEvent).detail.key !== key) {
       return;
     }
     if (event instanceof StorageEvent && event.key !== key) {
